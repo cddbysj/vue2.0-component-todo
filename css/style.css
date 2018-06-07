@@ -7,6 +7,10 @@
 	font-size: 14px;
 }
 
+[v-cloak] {
+	display: none;
+}
+
 #app {
 	max-width: 600px;
 	margin: 0 auto;
@@ -16,7 +20,7 @@
 }
 
 .header h1 {
-	font: 30px Helvetica, sans-serif;
+	font: 50px Helvetica, sans-serif;
 	text-align: center;
 	padding: 20px 0;
 	color: #d9d9d9;
@@ -29,53 +33,97 @@
 }
 
 .todo-list {
+	position: relative;
 	box-shadow: 0 0 5px #555;
 	padding: 5px;
-	position: relative;
 }
 
-.input {
+.todo-list .input {
 	width: 100%;
 	height: 30px;
 	line-height: 30px;
 	border: none;
+	outline: none;
 	padding-left: 30px;
 	font-size: 30px;
-	color: #dedede;
+	color: #777;
 }
 
 .todo-list .toggle-all {
 	position: absolute;
-	left: 4px;
+	left: 5px;
 	top: 16px;
 }
 
-.todo-item {
-	display: flex;
-	justify-content: space-between;
+/*todo条目active状态样式*/
+.todo-list .todo-item {
+	display: block;
+	position: relative;
+	height: 60px;
+	line-height: 60px;
 	border-bottom: 1px #d9d9d9 solid;
 }
 
-.completed {
+/*todo条目editing状态样式*/
+.todo-list li.editing {
+
+}
+
+/*todo条目completed状态样式*/
+.todo-list li.completed label {
 	text-decoration: line-through;
 	color: #d9d9d9;
 }
 
-.todo-item .todo-label {
-	font-size: 24px;
-	padding: 15px 60px 15px 0;
+/*todo条目active状态下，隐藏edit类*/
+.todo-list .todo-item .edit {
+	display: none;
 }
 
-.todo-item .todo-label input {
-	margin-right: 10px;
+
+/*todo条目editing状态下，隐藏view类*/
+.todo-list li.editing .view {
+	display: none;
+}
+
+/*todo条目editing状态下，显示edit类*/
+.todo-list li.editing .edit {
+	display: block;
+	line-height: 60px;
+	height: 60px;
+	margin-left: 20px;
+	padding-left: 10px;
+	font-size: 24px;
+	font-family: 'Avenir', Helvetica, Arial, sans-serif;
+	color: #324878;
+}
+
+.todo-item .toggle {
+	float: left;
+	height: 60px;
+	line-height: 60px;
+}
+
+.todo-item .todo-label {
+	font-size: 24px;
+	padding: 15px 60px 15px 20px;
+	text-align: left;
+	transition: color 0.4s;
 }
 
 .todo-item .remove-todo {
+	float: right;
+	height: 60px;
+	line-height: 60px;
 	font-size: 20px;
 	cursor: pointer;
 	outline: none;
 	border: none;
 	background: transparent;
+	color: transparent;
+}
+
+.todo-item .remove-todo:hover {
 	color: #777;
 }
 
@@ -103,6 +151,10 @@
 	border: 1px #999 solid;
 }
 
+.todo-tab .clear-completed-wrap {
+	width: 110px;
+}
+
 .todo-tab .clear-completed {
 	cursor: pointer;
 }
@@ -110,4 +162,3 @@
 .todo-tab .clear-completed:hover {
 	text-decoration: underline;
 }
-

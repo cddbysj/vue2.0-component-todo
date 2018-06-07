@@ -1,5 +1,18 @@
 const log = console.log.bind(console)
-let nextTodoId = 1
+
+const STORAGE_KEY = 'todos-vuejs-2.0'
+const todoStorage = {
+	fetch() {
+		let todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+		todos.forEach((todo, index) => todo.id = index)
+		todoStorage.uid = todos.length
+		return todos
+	},
+	save(todos) {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+	}
+}
+
 const filters = {
 	all(todos) {
 		return todos
@@ -47,28 +60,51 @@ const TodoListItem = {
 		todo: {
 			type: Object,
 			required: true
+		},
+		editedTodo: {
+			type: Object
+		}
+	},
+	directives: {
+		focus(el, binding) {
+			if (binding.value) {
+				el.focus()
+			}
 		}
 	},
 	template: `
-		<li :class="['todo-item', todo.completed?'completed':'']">
-			<label class="todo-label">
+		<li class="todo-item"
+			:class="{ completed: todo.completed, editing: todo === editedTodo }">
+			<div class="view">
 				<input
+					class="toggle"
 					type="checkbox"
-					:checked="todo.completed"
-					@input="$emit('toggle', todo)"/>
-				{{ todo.text }}
-			</label>
-			<button
-				class="remove-todo"
-				@click="$emit('remove', todo.id)">
-				×
-			</button>
+					v-model="todo.completed"/>
+				<label class="todo-label"
+					@dblclick="$emit('edit')">
+					{{ todo.text }}
+				</label>
+				<button
+					class="remove-todo"
+					@click="$emit('remove', todo.id)">
+					×
+				</button>
+			</div>
+			<input class="edit" type="text"
+				v-model="todo.text"
+				v-focus="todo === editedTodo"
+				@blur="$emit('doneEdit')"
+				@keyup.enter="$emit('doneEdit')"
+				@keyup.esc="$emit('cancelEdit')"/>
 		</li>
 	`
 }
 
 const TodoTabs = {
 	props: {
+		todos: {
+			type: Array
+		},
 		remaining: {
 			type: Number
 		}
@@ -98,10 +134,13 @@ const TodoTabs = {
 					{{ filter }}
 				</span>
 			</span>
-			<span class="clear-completed"
-				@click="$emit('clearCompleted')">
-				Clear completed
-			</span>
+			<div class="clear-completed-wrap">
+				<span class="clear-completed"
+					v-show="todos.length > remaining"
+					@click="$emit('clearCompleted')">
+					Clear completed
+				</span>
+			</div>
 		</div>
 	`
 }
@@ -114,9 +153,18 @@ const TodoList = {
 	},
 	data() {
 		return {
-			todos: [],
 			newTodoText: '',
+			todos: todoStorage.fetch(),
+			editedTodo: null,
 			visibility: 'all'
+		}
+	},
+	watch: {
+		todos: {
+ 			handler: function(todos) {
+ 				todoStorage.save(todos)
+ 			},
+ 			deep: true
 		}
 	},
 	computed: {
@@ -142,26 +190,31 @@ const TodoList = {
 			const trimmedText = this.newTodoText.trim()
 			if (trimmedText) {
 				this.todos.unshift({
-					id: nextTodoId++,
+					id: todoStorage.uid++,
 					text: trimmedText,
 					completed: false
 				})
 				this.newTodoText = ''
 			}
 		},
-		toggleTodo(todo) {
-			todo.completed = !todo.completed
-			log(`${todo.text}.completed:${todo.completed}`)
-		},
 		removeTodo(idToRemove) {
 			this.todos = this.todos.filter(todo => todo.id !== idToRemove)
 		},
+		editTodo(todo) {
+			this.beforeEditCache = todo.text
+			this.editedTodo = todo
+		},
+		doneEdit(todo) {
+			this.editedTodo = null
+		},
+		cancelEdit(todo) {
+			todo.text = this.beforeEditCache
+			this.editedTodo = null
+		},
 		clearCompletedTodo() {
-			log(`clearCompletedTodo`)
 			this.todos = this.todos.filter(item => !item.completed)
 		},
 		toggleFilter(filter) {
-			log(`toggleFilter:${filter}`)
 			this.visibility = filter
 		}
 	},
@@ -171,23 +224,29 @@ const TodoList = {
 				v-model="newTodoText"
 				@keyup.enter="addTodo"
 				placeholder="New todo here"/>
-			<input type="checkbox"
-				v-if="todos.length"
-				class="toggle-all"
-				v-model="allDone"/>
-			<ul v-if="todos.length">
-				<TodoListItem
-					v-for="todo in filteredTodos"
-					:key="todo.id"
-					:todo="todo"
-					@remove="removeTodo"
-					@toggle="toggleTodo">
-				</TodoListItem>
-			</ul>
-			<TodoTabs	v-if="remaining || todos.length"
-				@toggleFilter="toggleFilter"
-				@clearCompleted="clearCompletedTodo"
-				:remaining="remaining"/>
+			<div v-cloak>
+				<input type="checkbox"
+					v-if="todos.length"
+					class="toggle-all"
+					v-model="allDone"/>
+				<ul v-if="todos.length">
+					<TodoListItem
+						v-for="todo in filteredTodos"
+						:key="todo.id"
+						:todo="todo"
+						:editedTodo="editedTodo"
+						@remove="removeTodo"
+						@edit="editTodo(todo)"
+						@doneEdit="doneEdit(todo)"
+						@cancelEdit="cancelEdit(todo)">
+					</TodoListItem>
+				</ul>
+				<TodoTabs	v-if="todos.length"
+					@toggleFilter="toggleFilter"
+					@clearCompleted="clearCompletedTodo"
+					:todos="todos"
+					:remaining="remaining"/>
+			</div>
 		</div>
 	`
 }
